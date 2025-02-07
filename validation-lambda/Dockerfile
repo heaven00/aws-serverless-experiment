@@ -1,5 +1,5 @@
 # Use the official Python image from the Docker Hub
-FROM public.ecr.aws/lambda/python:3.8
+FROM public.ecr.aws/lambda/python:3.11
 
 # Copy function code
 COPY app.py ${LAMBDA_TASK_ROOT}
