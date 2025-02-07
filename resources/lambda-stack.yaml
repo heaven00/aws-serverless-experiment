@@ -1,6 +1,15 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Description: Lambda function to validate Kinesis data stream records
 
+Parameters:
+  ConfigFile:
+    Type: String
+    Description: Path to the configuration file
+
+  KinesisStream:
+    Type: String
+    Description: ARN of the Kinesis stream
+
 Resources:
   ValidationLambdaFunction:
     Type: AWS::Serverless::Function
@@ -12,7 +21,7 @@ Resources:
         Stream:
           Type: Kinesis
           Properties:
-            Stream: arn:aws:kinesis:<region>:<account-id>:stream/<your-stream-name>
+            Stream: !Ref KinesisStream
             StartingPosition: LATEST
 
   ValidationLambdaRepository:
