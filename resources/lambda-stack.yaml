@@ -1,0 +1,53 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Parameters:
+  ConfigFile:
+    Type: String
+  KinesisStreamArn:
+    Type: String
+
+
+Resources:
+  ValidationLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub 'validation-${ConfigFile.EnvironmentType}-${Region}'
+      Runtime: python3.11
+      Handler: index.lambda_handler
+      CodeUri: ../validation-lambda/index.py
+      Policies: 
+        - AWSLambdaKinesisExecutionRole
+      Events:
+        KinesisEvent:
+          Type: Kinesis
+          Properties:
+            Stream: !Sub ${KinesisStreamArn}
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 100
+            MaximumBatchingWindowInSeconds: 1
+
+  # RawDataLambda:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     FunctionName: !Sub 'raw-data-${ConfigFile.EnvironmentType}-${Region}'
+  #     Runtime: python3.11
+  #     Handler: index.lambda_handler
+  #     CodeUri: ../raw-data-lambda/
+  #     Events:
+  #       KinesisEvent:
+  #         Type: Kinesis
+  #         Properties:
+  #           Stream: !Ref KinesisStream
+  #           StartingPosition: LATEST
+  #           BatchSize: 100
+  #           MaximumBatchingWindowInSeconds: 60
+
+Outputs:
+  ValidationLambdaArn:
+    Value: !GetAtt ValidationLambda.Arn
+    Description: ARN of the validation Lambda function
+
+  # RawDataLambdaArn:
+  #   Value: !GetAtt RawDataLambda.Arn
+  #   Description: ARN of the raw data Lambda function
