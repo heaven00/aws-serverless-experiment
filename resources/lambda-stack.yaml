@@ -15,14 +15,21 @@ Resources:
     Type: AWS::Serverless::Function
     Properties:
       PackageType: Image
-      MemorySize: 128
+      Name: !Sub 'validation-lambda-${ConfigFile.EnvironmentType}-${Region}'
       Timeout: 30
+      CodeUri: ./src/validation-lambda/
       Events:
         Stream:
           Type: Kinesis
           Properties:
             Stream: !Ref KinesisStream
-            StartingPosition: LATEST
+            StartingPosition: TRIM_HORIZON
+            BatchSize: 1
+    Metadata:
+      Dockerfile: Dockerfile
+      DcokerContext: ./src/validation-lambda/
+      DockerTag: !Sub 'validation-lambda-${ConfigFile.EnvironmentType}-${Region}'
+
 
   ValidationLambdaRepository:
     Type: AWS::ECR::Repository
