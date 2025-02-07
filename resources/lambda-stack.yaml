@@ -8,7 +8,6 @@ Resources:
       PackageType: Image
       MemorySize: 128
       Timeout: 30
-      ImageUri: !Sub ${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/validation-lambda-repo:latest
       Events:
         Stream:
           Type: Kinesis
