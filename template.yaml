@@ -1,0 +1,48 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: AWS SAM template for serverless application with nested stacks
+
+Resources:
+  KinesisStreamStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: resources/kinesis-stream-stack.yaml
+      Parameters:
+        ConfigFile: !Sub "file://config/${Environment}.yaml"
+
+  S3Stack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: resources/s3-stack.yaml
+      Parameters:
+        ConfigFile: !Sub "file://config/${Environment}.yaml"
+
+  LambdaStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: resources/lambda-stack.yaml
+      Parameters:
+        ConfigFile: !Sub "file://config/${Environment}.yaml"
+        KinesisStreamArn: !GetAtt KinesisStreamStack.Outputs.KinesisStreamArn
+
+#   IAMStack:
+#     Type: AWS::CloudFormation::Stack
+#     Properties:
+#       TemplateURL: resources/iam-stack.yaml
+#       Parameters:
+#         EnvironmentType: !Ref EnvironmentType
+#         Region: !Ref Region
+#         KinesisStreamArn: !GetAtt KinesisStream.Outputs.KinesisStreamArn
+
+# Outputs:
+#   KinesisStreamName:
+#     Value: !GetAtt KinesisStream.Outputs.KinesisStreamName
+#     Description: Name of the Kinesis stream
+
+#   ValidationLambdaArn:
+#     Value: !GetAtt LambdaStack.Outputs.ValidationLambdaArn
+#     Description: ARN of the validation Lambda function
+
+#   RawDataLambdaArn:
+#     Value: !GetAtt LambdaStack.Outputs.RawDataLambdaArn
+#     Description: ARN of the raw data Lambda function
