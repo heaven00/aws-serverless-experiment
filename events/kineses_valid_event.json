@@ -1,0 +1,16 @@
+{
+    "Records": [
+        {
+            "Kinesis": {
+                "Data": "SGVsbG8gd29ybGQ=",
+                "PartitionKey": "partition-key-1",
+                "SequenceNumber": "1234567890",
+                "StreamName": "your-stream-name"
+            },
+            "EventSource": "aws:kinesis",
+            "AWSRegion": "us-east-1",
+            "EventID": "event-id-1",
+            "EventType": "Record"
+        }
+    ]
+}
