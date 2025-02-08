@@ -14,8 +14,8 @@ Resources:
   ValidationLambdaFunction:
     Type: AWS::Serverless::Function
     Properties:
+      FunctionName: !Sub 'validation-lambda-${ConfigFile.EnvironmentType}-${Region}'
       PackageType: Image
-      Name: !Sub 'validation-lambda-${ConfigFile.EnvironmentType}-${Region}'
       Timeout: 30
       CodeUri: ./src/validation-lambda/
       Events:
