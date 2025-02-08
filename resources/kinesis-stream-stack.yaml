@@ -12,10 +12,6 @@ Resources:
       Name: !Sub 'kinesis-${ConfigFile.EnvironmentType}-${Region}'
       ShardCount: 1
 
-  # S3Bucket:
-  #   Type: AWS::S3::Bucket
-  #   Properties:
-  #     BucketName: !Sub 'raw-data-${ConfigFile.EnvironmentType}-${Region}'
 
 Outputs:
   KinesisStreamName:
@@ -25,7 +21,3 @@ Outputs:
   KinesisStreamArn:
     Value: !GetAtt KinesisStream.Arn
     Description: ARN of the Kinesis stream
-
-  # S3BucketArn:
-  #   Value: !GetAtt S3Bucket.Arn
-  #   Description: ARN of the S3 bucket
