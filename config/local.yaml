@@ -1,0 +1,5 @@
+EnvironmentType: local
+Region: ca-local-1
+KinesisShards: 1
+LambdaMemory: 128
+S3BucketSuffix: -local
