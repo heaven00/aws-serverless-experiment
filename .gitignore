@@ -1,0 +1,13 @@
+.aider*
+.vscode*
+.aws-sam*
+.resources*
+
+__pycache__*
+.venv*
+venv*
+.pytest_cache*
+
+.approval_tests_temp*
+
+*.egg*
