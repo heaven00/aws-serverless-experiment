@@ -1,3 +1,4 @@
+from enum import Enum
 import json
 from pydantic import BaseModel, Field, ValidationError
 from datetime import datetime
@@ -13,20 +14,36 @@ class Transaction(BaseModel):
     card_type: str
     status: str
 
-def handler(event, context):
+
+class Status(Enum):
+    ok = "ok"
+    failed = "failed"
+
+
+class ValidatedTransaction(BaseModel):
+    data: Transaction
+    status: Status
+    error: str
+
+
+def handler(event, _) -> list[ValidatedTransaction]:
+    data: list[ValidatedTransaction] = []
     # Iterate over each record in the Kinesis data stream event
     for record in event['Records']:
         # Decode the base64 encoded data
         payload = json.loads(record['kinesis']['data'])
-        
         try:
             # Validate the data using Pydantic
             transaction = Transaction(**payload)
-            print(f"Valid record: {transaction}")
+            data.append(ValidatedTransaction(
+                data=transaction,
+                status=Status.ok,
+                error=""
+            ))
         except ValidationError as e:
-            print(f"Invalid record: {payload} - Error: {e}")
-    
-    return {
-        'statusCode': 200,
-        'body': json.dumps('Data validation complete')
-    }
+            data.append(ValidatedTransaction(
+                data=transaction,
+                status=Status.failed,
+                error=e
+            ))    
+    return data
