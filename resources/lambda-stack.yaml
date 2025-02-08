@@ -2,49 +2,38 @@ AWSTemplateFormatVersion: '2010-09-09'
 Description: Lambda function to filter Kinesis data stream records
 
 Parameters:
-  ConfigFile:
+  Environment:
     Type: String
     Description: Path to the configuration file
-
+  Region:
+    Type: String
+    Description: Region in which we are setting up
   KinesisStream:
     Type: String
     Description: ARN of the Kinesis stream
 
+Transform: AWS::Serverless-2016-10-31
 Resources:
   ECRRepository:
     Type: AWS::ECR::Repository
     Properties:
-      RepositoryName: validation-lambda-repo
-      RepositoryPolicyText: 
-      Version: "2012-10-17"
-      Statement: 
-        - 
-          Sid: AllowPushPull
-          Effect: Allow
-          Principal: 
-            AWS: 
-              - "arn:aws:iam::294331937131:user/jayant"
-              - "arn:aws:iam::294331937131:user/root"
-          Action: 
-            - "ecr:GetDownloadUrlForLayer"
-            - "ecr:BatchGetImage"
-            - "ecr:BatchCheckLayerAvailability"
-            - "ecr:PutImage"
-            - "ecr:InitiateLayerUpload"
-            - "ecr:UploadLayerPart"
-            - "ecr:CompleteLayerUpload"
+      RepositoryName: "validation-lambda-repo"
       ImageScanningConfiguration:
         ScanOnPush: true
     Metadata:
       Dockerfile: Dockerfile
       DockerContext: ./src/validation-lambda/
-      DockerTag: !Sub 'validation-lambda-${ConfigFile.EnvironmentType}-${ConfigFile.Region}'
+      DockerTag: !Sub 
+        - 'validation-lambda-${env}-${region}'
+        - env: !Ref Environment
+          region: !Ref Region
   ValidationLambdaFunction:
     Type: AWS::Serverless::Function
-    DependsOn: ECRRepository
     Properties:
-      FunctionName: !Sub 'validation-lambda-${ConfigFile.EnvironmentType}-${Region}'
-      Handler: 
+      FunctionName: !Sub 
+        - 'validation-lambda-${env}-${region}'
+        - env: !Ref Environment
+          region: !Ref Region
       PackageType: Image
       ImageUri: !GetAtt ECRRepository.RepositoryUri
       Architectures:
@@ -58,7 +47,7 @@ Resources:
             BatchSize: 100
 
 Outputs:
-  ValidationLambdaECR:
-    Value: !GetAtt ECRRepository.RepositoryUri
+  # ValidationLambdaECR:
+  #   Value: !GetAtt ECRRepository.RepositoryUri
   ValidationLambdaArn:
-    Type: !GetAtt ValidationLambdaFunction.Arn
+    Value: !GetAtt ValidationLambdaFunction.Arn

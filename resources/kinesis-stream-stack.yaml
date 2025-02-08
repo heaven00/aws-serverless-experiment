@@ -2,14 +2,22 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-  ConfigFile:
+  Environment:
     Type: String
+    Description: Path to the configuration file
+  Region:
+    Type: String
+    Description: Region in which we are setting up
+
 
 Resources:
   KinesisStream:
     Type: AWS::Kinesis::Stream
     Properties:
-      Name: !Sub 'kinesis-${ConfigFile.EnvironmentType}-${Region}'
+      Name: !Sub 
+        - 'kinesis-${env}-${region}'
+        - env: !Ref Environment
+          region: !Ref Region
       ShardCount: 1
 
 
