@@ -2,6 +2,11 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 Description: AWS SAM template for serverless application with nested stacks
 
+Parameters:
+  Environment:
+    Type: String
+    Description: Environment on which we are working
+
 Resources:
   KinesisStreamStack:
     Type: AWS::CloudFormation::Stack
@@ -25,14 +30,12 @@ Resources:
         ConfigFile: !Sub "file://config/${Environment}.yaml"
         KinesisStreamArn: !GetAtt KinesisStreamStack.Outputs.KinesisStreamArn
 
-#   IAMStack:
-#     Type: AWS::CloudFormation::Stack
-#     Properties:
-#       TemplateURL: resources/iam-stack.yaml
-#       Parameters:
-#         EnvironmentType: !Ref EnvironmentType
-#         Region: !Ref Region
-#         KinesisStreamArn: !GetAtt KinesisStream.Outputs.KinesisStreamArn
+  IAMStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: resources/iam-stack.yaml
+      Parameters:
+        KinesisStreamArn: !GetAtt KinesisStreamStack.Outputs.KinesisStreamArn
 
 # Outputs:
 #   KinesisStreamName:
