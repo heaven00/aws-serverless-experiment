@@ -43,6 +43,16 @@ Resources:
                 Action:
                   - s3:PutObject
                 Resource: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/*
+              - Effect: Allow
+                Action:
+                  - kinesis:GetRecords
+                  - kinesis:GetShardIterator
+                  - kinesis:DescribeStream
+                  - kinesis:DescribeStreamSummary
+                  - kinesis:ListShards
+                  - kinesis:ListStreams
+                Resource: !GetAtt KinesisStream.Arn
+
 
   LambdaFunction:
     Type: AWS::Lambda::Function
