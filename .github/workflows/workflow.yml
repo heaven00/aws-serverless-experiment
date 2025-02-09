@@ -1,0 +1,33 @@
+name: test and deploy
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+      - name: Set up Python
+        run: uv python install
+      - name: Run tests
+        run: uv run pytest tests
+
+  build-images-and-push-to-ecr: 
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: validation lambda
+        uses: ./.github/workflows/build_and_deploy_images.yml
+        with:
+            aws-region: ca-central-1
+            ecr-repo-name: fraud-detection/validation-lambda
+            image-tag: ${{ github.sha }}
+
