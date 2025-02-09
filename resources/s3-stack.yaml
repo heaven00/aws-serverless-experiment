@@ -2,15 +2,23 @@ AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
 
 Parameters:
-  ConfigFile:
+  Environment:
     Type: String
+    Description: Path to the configuration file
+  Region:
+    Type: String
+    Description: Region in which we are setting up
+
 
 Resources:
 
   S3Bucket:
     Type: AWS::S3::Bucket
     Properties:
-      BucketName: !Sub 'raw-transactions-${ConfigFile.EnvironmentType}-${Region}'
+      BucketName: !Sub 
+        - 'raw-transactions-${env}-${region}'
+        - env: !Ref Environment
+          region: !Ref Region
 
 Outputs:
   S3BucketArn:
