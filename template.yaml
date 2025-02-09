@@ -1,57 +1,66 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Transform: AWS::Serverless-2016-10-31
-Description: AWS SAM template for serverless application with nested stacks
 
 Parameters:
   Environment:
     Type: String
-    Description: Environment on which we are working
+    Description: deployment environment
   Region:
     Type: String
-    Description: Region in which we are setting up
+    Description: AWS region
+  ECRRepositoryTag:
+    Type: String
+    Description: ECR repository URI
+  
 
 Resources:
-  KinesisStreamStack:
-    Type: AWS::CloudFormation::Stack
+  KinesisStream:
+    Type: AWS::Kinesis::Stream
     Properties:
-      TemplateURL: resources/kinesis-stream-stack.yaml
-      Parameters:
-        Environment: !Ref Environment
-        Region: !Ref Region
-  
-  S3Stack:
-    Type: AWS::CloudFormation::Stack
+      Name: !Sub "${AWS::AccountId}-kinesis-stream"
+      ShardCount: 1
+
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
     Properties:
-      TemplateURL: resources/s3-stack.yaml
-      Parameters:
-        Environment: !Ref Environment
-        Region: !Ref Region
-  
-  LambdaStack:
-    Type: AWS::CloudFormation::Stack
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: execution-role-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                Resource: arn:aws:logs:*:*:*
+              - Effect: Allow
+                Action:
+                  - s3:PutObject
+                Resource: !Sub "arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/*"
+
+  LambdaFunction:
+    Type: AWS::Lambda::Function
     Properties:
-      TemplateURL: resources/lambda-stack.yaml
-      Parameters:
-        Environment: !Ref Environment
-        Region: !Ref Region
-        KinesisStreamArn: !GetAtt KinesisStreamStack.Outputs.KinesisStreamArn
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Code:
+        ImageUri: !Sub "294331937131.dkr.ecr.ca-central-1.amazonaws.com/fraud-detection/validation-lambda:${ECRRepositoryTag}"
+      PackageType: Image
 
-  IAMStack:
-    Type: AWS::CloudFormation::Stack
+  LambdaPermission:
+    Type: AWS::Lambda::Permission
     Properties:
-      TemplateURL: resources/iam-stack.yaml
-      Parameters:
-        KinesisStreamArn: !GetAtt KinesisStreamStack.Outputs.KinesisStreamArn
+      FunctionName: !Ref LambdaFunction
+      Action: lambda:InvokeFunction
+      Principal: kinesis.amazonaws.com
 
-# Outputs:
-#   KinesisStreamName:
-#     Value: !GetAtt KinesisStream.Outputs.KinesisStreamName
-#     Description: Name of the Kinesis stream
-
-#   ValidationLambdaArn:
-#     Value: !GetAtt LambdaStack.Outputs.ValidationLambdaArn
-#     Description: ARN of the validation Lambda function
-
-#   RawDataLambdaArn:
-#     Value: !GetAtt LambdaStack.Outputs.RawDataLambdaArn
-#     Description: ARN of the raw data Lambda function
+Outputs:
+  KinesisStreamName:
+    Value: !Ref KinesisStream
+    Description: Name of the Kinesis stream created

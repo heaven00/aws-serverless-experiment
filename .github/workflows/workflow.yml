@@ -32,10 +32,11 @@ jobs:
       AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
 
   deploy-serverless-infra:
-    # needs: build-validation-lambda-ecr
+    needs: build-validation-lambda-ecr
     runs-on: ubuntu-latest
     env:
       aws-region: ca-central-1
+      commit-sha: ${{ github.sha }}
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -50,7 +51,8 @@ jobs:
       - name: Deploy to AWS CloudFormation
         uses: aws-actions/aws-cloudformation-github-deploy@v1
         with:
-          name: fraud-detection-serverless
+          name: fraud-detection
           template: template.yaml
-          parameter-overrides: "Environment=dev,Region=${{ env.aws-region }}"
+          parameter-overrides: "Environment=dev,Region=${{ env.aws-region }},ECRRepositoryTag=${{ env.commit-sha }}"
           capabilities: "CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND"
+          disable-rollback: true # handle it manually and rollbacks are weird
