@@ -10,13 +10,12 @@ Parameters:
   ECRRepositoryTag:
     Type: String
     Description: ECR repository URI
-  
 
 Resources:
   KinesisStream:
     Type: AWS::Kinesis::Stream
     Properties:
-      Name: !Sub "${AWS::AccountId}-kinesis-stream"
+      Name: !Sub ${AWS::AccountId}-kinesis-stream
       ShardCount: 1
 
   LambdaExecutionRole:
@@ -43,14 +42,14 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:PutObject
-                Resource: !Sub "arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/*"
+                Resource: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/*
 
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
       Role: !GetAtt LambdaExecutionRole.Arn
       Code:
-        ImageUri: !Sub "294331937131.dkr.ecr.ca-central-1.amazonaws.com/fraud-detection/validation-lambda:${ECRRepositoryTag}"
+        ImageUri: !Sub 294331937131.dkr.ecr.ca-central-1.amazonaws.com/fraud-detection/validation-lambda:${ECRRepositoryTag}
       PackageType: Image
 
   LambdaPermission:
@@ -59,6 +58,16 @@ Resources:
       FunctionName: !Ref LambdaFunction
       Action: lambda:InvokeFunction
       Principal: kinesis.amazonaws.com
+      SourceArn: !GetAtt KinesisStream.Arn
+
+  KinesisEventSourceMapping:
+    Type: AWS::Lambda::EventSourceMapping
+    Properties:
+      EventSourceArn: !GetAtt KinesisStream.Arn
+      FunctionName: !Ref LambdaFunction
+      StartingPosition: LATEST
+      BatchSize: 100
+      Enabled: true
 
 Outputs:
   KinesisStreamName:
