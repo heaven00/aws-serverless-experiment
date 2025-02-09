@@ -53,7 +53,6 @@ Resources:
                   - kinesis:ListStreams
                 Resource: !GetAtt KinesisStream.Arn
 
-
   LambdaFunction:
     Type: AWS::Lambda::Function
     Properties:
@@ -79,7 +78,60 @@ Resources:
       BatchSize: 100
       Enabled: true
 
+  FirehoseRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: firehose.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: firehose-execution-policy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:AbortMultipartUpload
+                  - s3:GetBucketLocation
+                  - s3:GetObject
+                  - s3:ListBucket
+                  - s3:ListBucketMultipartUploads
+                  - s3:PutObject
+                Resource:
+                  - !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/
+                  - !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/*
+              - Effect: Allow
+                Action:
+                  - lambda:GetFunctionConfiguration
+                  - lambda:InvokeFunction
+                Resource: !GetAtt LambdaFunction.Arn
+
+  KinesisFirehose:
+    Type: AWS::KinesisFirehose::DeliveryStream
+    Properties:
+      DeliveryStreamName: !Sub "${AWS::AccountId}-firehose-stream"
+      DeliveryStreamType: DirectPut
+      ExtendedS3DestinationConfiguration:
+        RoleARN: !GetAtt FirehoseRole.Arn
+        BucketARN: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/
+        Prefix: processed-data/
+        ErrorOutputPrefix: failed-data/
+        ProcessingConfiguration:
+          Enabled: true
+          Processors:
+            - Type: Lambda
+              Parameters:
+                - ParameterName: LambdaArn
+                  ParameterValue: !GetAtt LambdaFunction.Arn
+
 Outputs:
   KinesisStreamName:
     Value: !Ref KinesisStream
     Description: Name of the Kinesis stream created
+  BucketARN:
+    Value: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/
+    Description: ARN of the S3 bucket where processed data will be stored
