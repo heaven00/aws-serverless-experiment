@@ -34,26 +34,23 @@ jobs:
   deploy-serverless-infra:
     # needs: build-validation-lambda-ecr
     runs-on: ubuntu-latest
+    env:
+      aws-region: ca-central-1
     steps:
-      - name: Checkout code
+      - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Install AWS CLI
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y awscli
-
-      - name: Configure AWS credentials
+      - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v3
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ca-central-1
-
-      - name: Deploy CloudFormation stack
-        run: |
-          aws cloudformation deploy \
-            --stack-name fraud-detection-serverless \
-            --template-file cloudformation/template.yml \
-            --capabilities CAPABILITY_AUTO_EXPAND CAPABILITY_NAMED_IAM \
-            --parameter-overrides Environment=dev Region=ca-central-1
+          aws-region: ${{ env.aws-region }}
+      
+      - name: Deploy to AWS CloudFormation
+        uses: aws-actions/aws-cloudformation-github-deploy@v1
+        with:
+          name: fraud-detection-serverless
+          template: template.yaml
+          parameter-overrides: "Environment=dev,Region=${{ env.aws-region }}"
+          capabilities: "CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND"
