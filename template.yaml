@@ -102,7 +102,6 @@ Resources:
                   - s3:ListBucketMultipartUploads
                   - s3:PutObject
                 Resource:
-                  - !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/
                   - !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/*
               - Effect: Allow
                 Action:
@@ -117,7 +116,7 @@ Resources:
       DeliveryStreamType: DirectPut
       ExtendedS3DestinationConfiguration:
         RoleARN: !GetAtt FirehoseRole.Arn
-        BucketARN: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/
+        BucketARN: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data
         Prefix: processed-data/
         ErrorOutputPrefix: failed-data/
         ProcessingConfiguration:
@@ -133,5 +132,5 @@ Outputs:
     Value: !Ref KinesisStream
     Description: Name of the Kinesis stream created
   BucketARN:
-    Value: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/
+    Value: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/
     Description: ARN of the S3 bucket where processed data will be stored
