@@ -16,7 +16,7 @@ def generate_random_transaction(transaction_id):
     statuses = ["approved", "declined"]
 
     transaction = {
-        "transaction_id": f"{datetime.now().strftime('%Y%m%d%H%M%S')}{transaction_id:05}",  # Combination of timestamp and incrementing number
+        "transaction_id": f"T{datetime.now().strftime('%Y%m%d%H%M%S')}{transaction_id:05}",  # Combination of timestamp and incrementing number
         "user_id": random.choice(user_ids),
         "timestamp": (datetime.utcnow() - timedelta(seconds=random.randint(0, 3600))).isoformat() + 'Z',
         "amount": round(random.uniform(1.0, 1000.0), 2),
