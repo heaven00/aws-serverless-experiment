@@ -80,6 +80,8 @@ Resources:
       DestinationConfig:
         OnSuccess:
           Destination: !GetAtt FraudDetectionBucket.Arn
+        OnFailure:
+          Destination: !GetAtt FraudDetectionBucket.Arn
       FunctionName: !Ref LambdaFunction
       MaximumRetryAttempts: 2
       Qualifier: !GetAtt version.Version
