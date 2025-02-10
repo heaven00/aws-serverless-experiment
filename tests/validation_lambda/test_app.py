@@ -38,6 +38,16 @@ def test_valid_transaction_should_process():
     assert response[0]["error"] == ""
 
 
+def test_transaction_with_json_data_in_kinesis_event():
+    event = {"Records": [{"kinesis": {"data": dummy_valid_transaction()}}]}
+
+    response = decode_payload(valid_transaction(event, None))['data']
+
+    assert len(response) == 1
+    assert response[0]["status"] == Status.ok.value
+    assert response[0]["error"] == ""
+
+
 # Test case for invalid transaction with missing fields
 def test_invalid_transaction_missing_fields_should_return_empty_response():
     invalid_payload = dummy_valid_transaction()
