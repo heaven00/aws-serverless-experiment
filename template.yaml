@@ -68,6 +68,22 @@ Resources:
       Code:
         ImageUri: !Sub 294331937131.dkr.ecr.ca-central-1.amazonaws.com/fraud-detection/validation-lambda:${ECRRepositoryTag}
       PackageType: Image
+  
+  version:
+    Type: AWS::Lambda::Version
+    Properties:
+      FunctionName: !Ref LambdaFunction
+
+  ValidDataDump:
+    Type: AWS::Lambda::EventInvokeConfig
+    Properties:
+      DestinationConfig:
+        OnSuccess:
+          Destination: !GetAtt FraudDetectionBucket.Arn
+      FunctionName: !Ref LambdaFunction
+      MaximumRetryAttempts: 2
+      Qualifier: !GetAtt version.Version
+
 
   LambdaPermission:
     Type: AWS::Lambda::Permission
