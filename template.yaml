@@ -12,6 +12,14 @@ Parameters:
     Description: ECR repository URI
 
 Resources:
+  FraudDetectionBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "${Region}-${Environment}-fraud-detection-data"
+      VersioningConfiguration:
+        Status: Disabled
+        
+
   KinesisStream:
     Type: AWS::Kinesis::Stream
     Properties:
@@ -42,7 +50,7 @@ Resources:
               - Effect: Allow
                 Action:
                   - s3:PutObject
-                Resource: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/processed/*
+                Resource: !GetAtt FraudDetectionBucket.Arn
               - Effect: Allow
                 Action:
                   - kinesis:GetRecords
@@ -102,7 +110,7 @@ Resources:
                   - s3:ListBucketMultipartUploads
                   - s3:PutObject
                 Resource:
-                  - !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/*
+                  - !GetAtt FraudDetectionBucket.Arn
               - Effect: Allow
                 Action:
                   - lambda:GetFunctionConfiguration
@@ -116,7 +124,7 @@ Resources:
       DeliveryStreamType: DirectPut
       ExtendedS3DestinationConfiguration:
         RoleARN: !GetAtt FirehoseRole.Arn
-        BucketARN: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data
+        BucketARN: !GetAtt FraudDetectionBucket.Arn
         Prefix: processed-data/
         ErrorOutputPrefix: failed-data/
         ProcessingConfiguration:
