@@ -1,12 +1,13 @@
 import json
 from datetime import datetime
 from src.validation_lambda.app import valid_transaction, Status
+import base64
 
-# Helper function to encode payload
 
-
+# Helper function to encode payloadds
 def encode_payload(payload):
-    return json.dumps(payload)
+    payload_json = json.dumps(payload)
+    return base64.b64encode(payload_json.encode('utf-8')).decode('utf-8')
 
 
 def decode_payload(payload):

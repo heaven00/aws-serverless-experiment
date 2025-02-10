@@ -40,12 +40,10 @@ def valid_transaction(event, _) -> dict[str, list[ValidTransaction]]:
     for record in event['Records']:
         # Decode the base64 encoded data
         event = record['kinesis']['data']
-        print('The type of event is ', type(event))
-        print(event)
         if isinstance(event, str):
-            payload = json.loads(event)
+            payload = json.loads(base64.b64decode(event).decode('utf-8'))
         else:
-            payload = event                
+            payload = event
         try:
             # Validate the data using Pydantic
             data.append(ValidTransaction(
