@@ -70,24 +70,6 @@ Resources:
       Code:
         ImageUri: !Sub 294331937131.dkr.ecr.ca-central-1.amazonaws.com/fraud-detection/validation-lambda:${ECRRepositoryTag}
       PackageType: Image
-  
-  version:
-    Type: AWS::Lambda::Version
-    Properties:
-      FunctionName: !Ref LambdaFunction
-
-  ValidDataDump:
-    Type: AWS::Lambda::EventInvokeConfig
-    Properties:
-      DestinationConfig:
-        OnSuccess:
-          Destination: !GetAtt FraudDetectionBucket.Arn
-        OnFailure:
-          Destination: !GetAtt FraudDetectionBucket.Arn
-      FunctionName: !Ref LambdaFunction
-      MaximumRetryAttempts: 2
-      Qualifier: !GetAtt version.Version
-
 
   LambdaPermission:
     Type: AWS::Lambda::Permission
@@ -123,14 +105,11 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - s3:AbortMultipartUpload
-                  - s3:GetBucketLocation
-                  - s3:GetObject
                   - s3:ListBucket
-                  - s3:ListBucketMultipartUploads
                   - s3:PutObject
                 Resource:
                   - !GetAtt FraudDetectionBucket.Arn
+                  - !Sub "arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/*"
               - Effect: Allow
                 Action:
                   - lambda:GetFunctionConfiguration
@@ -147,6 +126,11 @@ Resources:
         BucketARN: !GetAtt FraudDetectionBucket.Arn
         Prefix: processed-data/
         ErrorOutputPrefix: failed-data/
+        BufferingHints:
+          SizeInMBs: 1
+          IntervalInSeconds: 0  
+        EncryptionConfiguration:
+          NoEncryptionConfig: NoEncryption  # 
         ProcessingConfiguration:
           Enabled: true
           Processors:
@@ -162,3 +146,6 @@ Outputs:
   BucketARN:
     Value: !Sub arn:aws:s3:::${Region}-${Environment}-fraud-detection-data/
     Description: ARN of the S3 bucket where processed data will be stored
+  Firehose:
+    Value: !Ref KinesisFirehose
+    Description: Name of the Kinesis stream created
