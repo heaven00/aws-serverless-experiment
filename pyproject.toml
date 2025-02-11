@@ -13,7 +13,7 @@ dependencies = [
     "jupyter>=1.1.1",
     "matplotlib>=3.10.0",
     "scikit-learn>=1.6.1",
-    "moto>=5.0.28",
+    "moto[all,lambda]>=5.0.28",
 ]
 
 [tool.pytest.ini_options]
