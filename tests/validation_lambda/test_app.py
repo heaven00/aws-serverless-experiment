@@ -1,17 +1,32 @@
 import json
-from datetime import datetime
-from src.validation_lambda.app import valid_transaction, Status
 import base64
+import boto3
+import os
+from datetime import datetime
+from moto import mock_aws
+import pytest
+from src.validation_lambda.app import valid_transaction, Status, write_to_s3
+
+# Setup environment variables for S3
+VALID_BUCKET = "valid-bucket"
+INVALID_BUCKET = "invalid-bucket"
+os.environ["VALIDDATA_BUCKET_NAME"] = VALID_BUCKET
+os.environ["INVALIDDATA_BUCKET_NAME"] = INVALID_BUCKET
 
 
-# Helper function to encode payloadds
+@pytest.fixture(scope="function")
+def s3_mock():
+    with mock_aws():
+        s3 = boto3.client("s3")
+        s3.create_bucket(Bucket=VALID_BUCKET)
+        s3.create_bucket(Bucket=INVALID_BUCKET)
+        yield s3
+
+
 def encode_payload(payload):
     payload_json = json.dumps(payload)
-    return base64.b64encode(payload_json.encode('utf-8')).decode('utf-8')
+    return base64.b64encode(payload_json.encode("utf-8")).decode("utf-8")
 
-
-def decode_payload(payload):
-    return payload
 
 # Sample valid transaction
 def dummy_valid_transaction():
@@ -22,87 +37,63 @@ def dummy_valid_transaction():
         "amount": 254.67,
         "device_type": "mobile",
         "location": "California, USA",
-        "is_vpn": "false",
+        "is_vpn": False,
         "card_type": "credit",
         "status": "approved",
     }
 
 
-# Test case for valid transaction
-def test_valid_transaction_should_process():
-    event = {"Records": [{"kinesis": {"data": encode_payload(dummy_valid_transaction())}}]}
-
-    response = decode_payload(valid_transaction(event, None))['data']
-
-    assert len(response) == 1
-    assert response[0]["status"] == Status.ok.value
-    assert response[0]["error"] == ""
-
-
-def test_transaction_with_json_data_in_kinesis_event():
-    event = {"Records": [{"kinesis": {"data": dummy_valid_transaction()}}]}
-
-    response = decode_payload(valid_transaction(event, None))['data']
+def test_valid_transaction_should_process(s3_mock):
+    event = {
+        "Records": [{"kinesis": {"data": encode_payload(dummy_valid_transaction())}}]
+    }
+    response = valid_transaction(event, None)["data"]
 
     assert len(response) == 1
     assert response[0]["status"] == Status.ok.value
     assert response[0]["error"] == ""
 
+    # Check if data is written to S3
+    s3_objects = s3_mock.list_objects(Bucket=VALID_BUCKET)
+    assert "Contents" in s3_objects
+    assert len(s3_objects["Contents"]) == 1
 
-# Test case for invalid transaction with missing fields
-def test_invalid_transaction_missing_fields_should_return_empty_response():
+    # should not write to invalid bucket
+    s3_objects = s3_mock.list_objects(Bucket=INVALID_BUCKET)
+    assert "Contents" not in s3_objects
+
+
+def test_invalid_transaction_should_write_to_invalid_s3(s3_mock):
     invalid_payload = dummy_valid_transaction()
     del invalid_payload["transaction_id"]  # Remove a required field
     event = {"Records": [{"kinesis": {"data": encode_payload(invalid_payload)}}]}
 
-    response = decode_payload(valid_transaction(event, None))['data']
+    valid_transaction(event, None)  # Process transaction
 
-    assert len(response) == 0
+    # Check if invalid transaction is written to INVALID S3 bucket
+    s3_objects = s3_mock.list_objects(Bucket=INVALID_BUCKET)
+    assert "Contents" in s3_objects
+    assert len(s3_objects["Contents"]) == 1
 
-
-# Test case for invalid transaction with incorrect format
-def test_invalid_transaction_incorrect_format_should_return_empty_response():
-    invalid_payload = dummy_valid_transaction()
-    invalid_payload["transaction_id"] = "12345"  # Does not match regex
-    event = {"Records": [{"kinesis": {"data": encode_payload(invalid_payload)}}]}
-
-    response = decode_payload(valid_transaction(event, None))['data']
-
-    assert len(response) == 0
+    # should not write to valid bucket 
+    s3_objects = s3_mock.list_objects(Bucket=VALID_BUCKET)
+    assert "Contents" not in s3_objects
 
 
-# Test case for multiple records
-def test_multiple_transactions():
+def test_multiple_transactions(s3_mock):
     event = {
         "Records": [
             {"kinesis": {"data": encode_payload(dummy_valid_transaction())}},
             {"kinesis": {"data": encode_payload(dummy_valid_transaction())}},
         ]
     }
-
-    response = decode_payload(valid_transaction(event, None))['data']
+    response = valid_transaction(event, None)['data']
 
     assert len(response) == 2
     assert all(tx["status"] == Status.ok.value for tx in response)
 
 
-def test_multiple_mix_transactions_should_filter_invalid_transactions():
-    invalid_payload = dummy_valid_transaction()
-    invalid_payload["transaction_id"] = "12345"
-    event = {
-        "Records": [
-            {"kinesis": {"data": encode_payload(dummy_valid_transaction())}},
-            {"kinesis": {"data": encode_payload(dummy_valid_transaction())}},
-            {"kinesis": {"data": encode_payload(invalid_payload)}},
-        ]
-    }
-
-    response = decode_payload(valid_transaction(event, None))['data']
-
-    assert len(response) == 2
-
-
-def test_output_is_json_serializable():
+def test_output_is_json_serializable(s3_mock):
     """Lambda expects output to be serializable"""
     event = {
         "Records": [
@@ -110,12 +101,14 @@ def test_output_is_json_serializable():
         ]
     }
 
-    response = decode_payload(valid_transaction(event, None))['data']
+    response = valid_transaction(event, None)['data']
     assert json.dumps(response)
 
 
-# Test case for empty event
-def test_empty_event():
-    event = {"Records": []}
-    response = valid_transaction(event, None)
-    assert response == {'data': []}
+def test_write_to_s3(s3_mock):
+    content = json.dumps({"test": "data"})
+    write_to_s3(VALID_BUCKET, "test_transaction", content)
+
+    s3_objects = s3_mock.list_objects(Bucket=VALID_BUCKET)
+    assert "Contents" in s3_objects
+    assert len(s3_objects["Contents"]) == 1

@@ -65,14 +65,14 @@ def valid_transaction(event, _) -> dict[str, list[ValidTransaction]]:
                 )
         except ValidationError as e:
             invalid_trx = InvalidTransaction(
-                transaction=Transaction(**payload),
+                transaction=payload,
                 error=str(e)
             )
             invalid_data.append(invalid_trx.model_dump())
             write_to_s3(
                 invalid_data_bucket_name,
-                invalid_data.transaction.transaction_id,
-                invalid_data.model_dump_json()
+                hash(str(invalid_trx.transaction)),
+                invalid_trx.model_dump_json()
                 )
     return {
         "data": data
