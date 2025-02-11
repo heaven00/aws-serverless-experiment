@@ -63,8 +63,6 @@ Resources:
         Variables:
           VALIDDATA_BUCKET_NAME: !Ref validData
           VALIDDATA_BUCKET_ARN: !GetAtt validData.Arn
-          # FRAUDDETECTIONMODEL_FUNCTION_NAME: !Ref FraudDetectionModel
-          # FRAUDDETECTIONMODEL_FUNCTION_ARN: !GetAtt FraudDetectionModel.Arn
           INVALIDDATA_BUCKET_NAME: !Ref InvalidData
           INVALIDDATA_BUCKET_ARN: !GetAtt InvalidData.Arn
       Policies:
@@ -94,8 +92,6 @@ Resources:
               Resource:
                 - !Sub arn:${AWS::Partition}:s3:::${validData}
                 - !Sub arn:${AWS::Partition}:s3:::${validData}/*
-        # - LambdaInvokePolicy:
-        #     FunctionName: !Ref FraudDetectionModel
         - Statement:
             - Effect: Allow
               Action:
@@ -128,83 +124,6 @@ Resources:
     DeletionPolicy: Retain
     Properties:
       LogGroupName: !Sub /aws/lambda/${validateData}
-  # FraudDetectionModel:
-  #   Type: AWS::Serverless::Function
-  #   Properties:
-  #     Description: !Sub
-  #       - Stack ${AWS::StackName} Function ${ResourceName}
-  #       - ResourceName: FraudDetectionModel
-  #     MemorySize: 3008
-  #     Timeout: 30
-  #     Tracing: Active
-  #     Environment:
-  #       Variables:
-  #         PREDICTIONS_BUCKET_NAME: !Ref Predictions
-  #         PREDICTIONS_BUCKET_ARN: !GetAtt Predictions.Arn
-  #     Policies:
-  #       - Statement:
-  #           - Effect: Allow
-  #             Action:
-  #               - s3:GetObject
-  #               - s3:GetObjectAcl
-  #               - s3:GetObjectLegalHold
-  #               - s3:GetObjectRetention
-  #               - s3:GetObjectTorrent
-  #               - s3:GetObjectVersion
-  #               - s3:GetObjectVersionAcl
-  #               - s3:GetObjectVersionForReplication
-  #               - s3:GetObjectVersionTorrent
-  #               - s3:ListBucket
-  #               - s3:ListBucketMultipartUploads
-  #               - s3:ListBucketVersions
-  #               - s3:ListMultipartUploadParts
-  #               - s3:AbortMultipartUpload
-  #               - s3:DeleteObject
-  #               - s3:DeleteObjectVersion
-  #               - s3:PutObject
-  #               - s3:PutObjectLegalHold
-  #               - s3:PutObjectRetention
-  #               - s3:RestoreObject
-  #             Resource:
-  #               - !Sub arn:${AWS::Partition}:s3:::${Predictions}
-  #               - !Sub arn:${AWS::Partition}:s3:::${Predictions}/*
-  #     CodeUri: src/FraudDetectionModel
-  #     Runtime: python3.11
-  #     Handler: handler.handler
-  # FraudDetectionModelLogGroup:
-  #   Type: AWS::Logs::LogGroup
-  #   DeletionPolicy: Retain
-  #   Properties:
-  #     LogGroupName: !Sub /aws/lambda/${FraudDetectionModel}
-  # Predictions:
-  #   Type: AWS::S3::Bucket
-  #   Properties:
-  #     BucketName: !Sub ${AWS::StackName}-predictio-${AWS::AccountId}
-  #     BucketEncryption:
-  #       ServerSideEncryptionConfiguration:
-  #         - ServerSideEncryptionByDefault:
-  #             SSEAlgorithm: aws:kms
-  #             KMSMasterKeyID: alias/aws/s3
-  #     PublicAccessBlockConfiguration:
-  #       IgnorePublicAcls: true
-  #       RestrictPublicBuckets: true
-  # PredictionsBucketPolicy:
-  #   Type: AWS::S3::BucketPolicy
-  #   Properties:
-  #     Bucket: !Ref Predictions
-  #     PolicyDocument:
-  #       Id: RequireEncryptionInTransit
-  #       Version: '2012-10-17'
-  #       Statement:
-  #         - Principal: '*'
-  #           Action: '*'
-  #           Effect: Deny
-  #           Resource:
-  #             - !GetAtt Predictions.Arn
-  #             - !Sub ${Predictions.Arn}/*
-  #           Condition:
-  #             Bool:
-  #               aws:SecureTransport: 'false'
   InvalidData:
     Type: AWS::S3::Bucket
     Properties:
