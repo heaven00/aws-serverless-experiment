@@ -94,8 +94,8 @@ Resources:
               Resource:
                 - !Sub arn:${AWS::Partition}:s3:::${validData}
                 - !Sub arn:${AWS::Partition}:s3:::${validData}/*
-        - LambdaInvokePolicy:
-            FunctionName: !Ref FraudDetectionModel
+        # - LambdaInvokePolicy:
+        #     FunctionName: !Ref FraudDetectionModel
         - Statement:
             - Effect: Allow
               Action:
