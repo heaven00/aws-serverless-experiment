@@ -49,7 +49,7 @@ You can use `utils/simulate_events.py` to simulate events and test the cloudform
 
 The simulate.py pushes transactions events random some with error in the transaction-id format and some in the correct format, you should observe data being pushed into both your valid and invalid s3 buckets.
 
-## Tech project structure
+## The project structure
 This is a multi sub project mono repo, each lambda function logic is a separate folder in `src` directory and the build workflow builds each of them and pushes to ECR which can then be used in AWS Lambda.
 
 ```
