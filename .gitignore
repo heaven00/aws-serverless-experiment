@@ -11,3 +11,7 @@ venv*
 .approval_tests_temp*
 
 *.egg*
+
+.ipynb_checkpoints*
+*.csv
+*.pkl
