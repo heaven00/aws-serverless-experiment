@@ -48,3 +48,25 @@ You can use `utils/simulate_events.py` to simulate events and test the cloudform
 - Now run `uv run python utils/simulate_events.py --stream-name fraud-detection-TransactionIngestion-mHXRRNzZAWJV --num-transactions 1000`
 
 The simulate.py pushes transactions events random some with error in the transaction-id format and some in the correct format, you should observe data being pushed into both your valid and invalid s3 buckets.
+
+## Tech project structure
+This is a multi sub project mono repo, each lambda function logic is a separate folder in `src` directory and the build workflow builds each of them and pushes to ECR which can then be used in AWS Lambda.
+
+```
+├── src
+│   ├── fraud_detection_model
+│   │   ├── app.py
+│   │   ├── Dockerfile
+│   │   ├── fraud_detection_model.pkl
+│   │   └── requirements.txt
+│   └── validation_lambda
+│       ├── app.py
+│       ├── Dockerfile
+│       └── requirements.txt
+```
+
+The Serverless infra is managed by the template.yaml file using cloudformation, the best process of maintaining it so far that I have found is,
+
+`Edit in Infrastructure Composer on AWS using the UI -> copy over locally -> Update code and workflow as needed -> test with act -> deploy` 
+
+I believe this is not a good way ideally I would want the template to be split into separate folders and load dynamically based on the environment but that was taking too much time to get right and also I would prefer my experience with Terraform over this but due to the time limit I am sticking to the above process.
