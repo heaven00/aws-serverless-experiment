@@ -53,6 +53,6 @@ jobs:
         with:
           name: fraud-detection
           template: template.yaml
-          parameter-overrides: "Environment=dev,Region=${{ env.aws-region }},ECRRepositoryTag=${{ env.commit-sha }}"
+          parameter-overrides: "ECRRepositoryTag=${{ env.commit-sha }}"
           capabilities: "CAPABILITY_IAM,CAPABILITY_AUTO_EXPAND"
           disable-rollback: true # handle it manually and rollbacks are weird
