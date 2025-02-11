@@ -7,6 +7,12 @@ import argparse
 # Initialize a session using Amazon Kinesis
 kinesis_client = boto3.client('kinesis', region_name='ca-central-1')
 
+def choose_transaction_id(transaction_id):
+    return random.choice([
+        f"T{datetime.now().strftime('%Y%m%d%H%M%S')}{transaction_id:05}",
+        f"corrupted{datetime.now().strftime('%Y%m%d%H%M%S')}{transaction_id:05}"
+    ])
+
 # Function to generate a random transaction
 def generate_random_transaction(transaction_id):
     user_ids = ["U56789", "U12345", "U67890", "U98765"]
@@ -16,7 +22,7 @@ def generate_random_transaction(transaction_id):
     statuses = ["approved", "declined"]
 
     transaction = {
-        "transaction_id": f"T{datetime.now().strftime('%Y%m%d%H%M%S')}{transaction_id:05}",  # Combination of timestamp and incrementing number
+        "transaction_id": choose_transaction_id(transaction_id) ,  # Combination of timestamp and incrementing number
         "user_id": random.choice(user_ids),
         "timestamp": (datetime.utcnow() - timedelta(seconds=random.randint(0, 3600))).isoformat() + 'Z',
         "amount": round(random.uniform(1.0, 1000.0), 2),
@@ -36,8 +42,7 @@ def send_transaction_to_kinesis(transaction, stream_name):
     response = kinesis_client.put_record(
         StreamName=stream_name,
         Data=data,
-        PartitionKey=partition_key,
-        StreamARN="arn:aws:kinesis:ca-central-1:294331937131:stream/294331937131-kinesis-stream"
+        PartitionKey=partition_key
     )
     return response
 
